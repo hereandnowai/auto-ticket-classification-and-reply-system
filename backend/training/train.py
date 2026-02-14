@@ -28,6 +28,9 @@ def compute_metrics(pred: EvalPrediction):
     }
 
 def train_bert_model():
+    # Get the directory where this script lives (works in Docker and locally)
+    training_dir = os.path.dirname(os.path.abspath(__file__))
+    
     print("Loading dataset...")
     dataset = load_dataset("Tobi-Bueck/customer-support-tickets")
     df = pd.DataFrame(dataset['train'])
@@ -46,8 +49,8 @@ def train_bert_model():
     df['label'] = le.fit_transform(df['queue'])
     
     # Save Label Encoder
-    os.makedirs('backend/training', exist_ok=True)
-    with open('backend/training/label_encoder.pkl', 'wb') as f:
+    os.makedirs(training_dir, exist_ok=True)
+    with open(os.path.join(training_dir, 'label_encoder.pkl'), 'wb') as f:
         pickle.dump(le, f)
     
     # Prepare HF Dataset
@@ -99,7 +102,7 @@ def train_bert_model():
     trainer.train()
     
     # Save model and tokenizer
-    save_path = "backend/training/models/fine_tuned_bert"
+    save_path = os.path.join(training_dir, 'models', 'fine_tuned_bert')
     os.makedirs(save_path, exist_ok=True)
     model.save_pretrained(save_path)
     tokenizer.save_pretrained(save_path)
