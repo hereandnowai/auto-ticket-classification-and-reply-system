@@ -17,8 +17,8 @@ class TicketClassifierService:
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=True)
         
-        # Load the label encoder to get the original class names
-        with open(os.path.join(training_path, 'label_encoder.pkl'), 'rb') as f:
+        # Load the label encoder from the model directory (same location as model weights)
+        with open(os.path.join(model_path, 'label_encoder.pkl'), 'rb') as f:
             self.label_encoder = pickle.load(f)
             
         self.model.eval()

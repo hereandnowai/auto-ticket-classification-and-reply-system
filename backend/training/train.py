@@ -68,9 +68,10 @@ def train_bert_model():
     le = LabelEncoder()
     df['label'] = le.fit_transform(df['queue'])
     
-    # Save Label Encoder
-    os.makedirs(training_dir, exist_ok=True)
-    with open(os.path.join(training_dir, 'label_encoder.pkl'), 'wb') as f:
+    # Save Label Encoder inside the model directory (persisted by Docker volume)
+    save_path = os.path.join(training_dir, 'models', 'fine_tuned_bert')
+    os.makedirs(save_path, exist_ok=True)
+    with open(os.path.join(save_path, 'label_encoder.pkl'), 'wb') as f:
         pickle.dump(le, f)
     
     # Prepare HF Dataset
@@ -155,4 +156,3 @@ def train_bert_model():
 
 if __name__ == "__main__":
     train_bert_model()
-
