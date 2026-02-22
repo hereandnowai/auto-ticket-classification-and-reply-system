@@ -31,6 +31,11 @@ def train_bert_model():
     # Get the directory where this script lives (works in Docker and locally)
     training_dir = os.path.dirname(os.path.abspath(__file__))
     
+    # Detect if running in Docker/Codespace (limited resources)
+    is_docker = os.environ.get("DOCKER_ENV", "").lower() == "true"
+    if is_docker:
+        print("🐳 Docker/Codespace detected — using lightweight training settings")
+    
     print("Loading dataset...")
     dataset = load_dataset("Tobi-Bueck/customer-support-tickets")
     df = pd.DataFrame(dataset['train'])
@@ -43,6 +48,11 @@ def train_bert_model():
     # ENSURE TEXT IS STRING AND NOT NULL
     df = df.dropna(subset=['body'])
     df['body'] = df['body'].astype(str)
+    
+    # In Docker/Codespace, use a smaller subset for faster training
+    if is_docker and len(df) > 5000:
+        print(f"   Sampling 5000 from {len(df)} rows for faster training...")
+        df = df.sample(n=5000, random_state=42)
     
     # Label Encoding
     le = LabelEncoder()
@@ -74,20 +84,40 @@ def train_bert_model():
     num_labels = len(top_queues)
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_labels)
     
-    # Training Arguments
-    training_args = TrainingArguments(
-        output_dir="./results",
-        num_train_epochs=3,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
-        warmup_steps=500,
-        weight_decay=0.01,
-        logging_dir="./logs",
-        logging_steps=50,
-        eval_strategy="epoch",
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-    )
+    # Training Arguments — lighter settings for Docker/Codespace
+    if is_docker:
+        training_args = TrainingArguments(
+            output_dir="./results",
+            num_train_epochs=1,
+            per_device_train_batch_size=8,
+            per_device_eval_batch_size=8,
+            warmup_steps=50,
+            weight_decay=0.01,
+            logging_dir="./logs",
+            logging_steps=50,
+            eval_strategy="no",
+            save_strategy="no",
+            fp16=False,
+            dataloader_pin_memory=False,
+            dataloader_num_workers=0,
+        )
+    else:
+        training_args = TrainingArguments(
+            output_dir="./results",
+            num_train_epochs=3,
+            per_device_train_batch_size=16,
+            per_device_eval_batch_size=16,
+            warmup_steps=500,
+            weight_decay=0.01,
+            logging_dir="./logs",
+            logging_steps=50,
+            eval_strategy="epoch",
+            save_strategy="epoch",
+            load_best_model_at_end=True,
+        )
+    
+    total_steps = (len(tokenized_datasets["train"]) // training_args.per_device_train_batch_size) * int(training_args.num_train_epochs)
+    print(f"Training: {int(training_args.num_train_epochs)} epoch(s), ~{total_steps} steps, batch_size={training_args.per_device_train_batch_size}")
     
     # Trainer
     trainer = Trainer(
@@ -107,7 +137,7 @@ def train_bert_model():
     model.save_pretrained(save_path)
     tokenizer.save_pretrained(save_path)
     
-    print(f"Training complete. Model saved to {save_path}")
+    print(f"✅ Training complete. Model saved to {save_path}")
 
 if __name__ == "__main__":
     train_bert_model()
