@@ -3,7 +3,7 @@ import axios from 'axios';
 import { LogIn, User, Lock, AlertCircle } from 'lucide-react';
 import './Login.css';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');

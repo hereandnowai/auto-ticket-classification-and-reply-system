@@ -19,7 +19,9 @@ import Login from './Login';
 import TabsComponent from './TabsComponent';
 import './App.css';
 
-const API_BASE = 'http://localhost:8000';
+// In Docker: empty string means requests go through nginx proxy (/api/ -> backend:8000)
+// In local dev: set VITE_API_URL=http://localhost:8000 or it defaults to empty
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 function App() {
   const [user, setUser] = useState(null);
