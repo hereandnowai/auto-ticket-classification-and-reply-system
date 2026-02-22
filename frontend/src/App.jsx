@@ -19,9 +19,8 @@ import Login from './Login';
 import TabsComponent from './TabsComponent';
 import './App.css';
 
-// In Docker: empty string means requests go through nginx proxy (/api/ -> backend:8000)
-// In local dev: set VITE_API_URL=http://localhost:8000 or it defaults to empty
-const API_BASE = import.meta.env.VITE_API_URL || '';
+// On localhost: call backend directly. On Codespace/deployed: use nginx proxy (relative path)
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
 
 function App() {
   const [user, setUser] = useState(null);
